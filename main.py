@@ -31,59 +31,53 @@ done = False
 # kiểm tra xem có bắt đầu game từ main menu hay không
 start = False
 
-# sets the frame rate of the program
+# thiết lập khung hình
 clock = pygame.time.Clock()
 
-"""
-CONSTANTS
-"""
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
-"""lambda functions are anonymous functions that you can assign to a variable.
-e.g.
-1. x = lambda x: x + 2  # takes a parameter x and adds 2 to it
-2. print(x(4))
->>6
-"""
-color = lambda: tuple([random.randint(0, 255) for i in range(3)])  # lambda function for random color, not a constant.
-GRAVITY = Vector2(0, 0.86)  # Vector2 is a pygame
+color = lambda: tuple([random.randint(0, 255) for i in range(3)])  # hàm lambda cho màu ngẫu nhiên
+GRAVITY = Vector2(0, 0.86)  # trọng lực
+# background màn hình start, game over, win
+bg_start = pygame.image.load(os.path.join("images", "bg_start.png"))
+bg_game_over = pygame.image.load(os.path.join("images", "bg_game_over.png"))
+bg_won = pygame.image.load(os.path.join("images", "bg_won.png"))
 
 """
-Main player class
+PlayerClass
 """
 
 
 class Player(pygame.sprite.Sprite):
-    """Class for player. Holds update method, win and die variables, collisions and more."""
-    win: bool
-    died: bool
+    win: bool #kiểm tra xem đã thắng chưa
+    died: bool #kiểm tra xem đã thua chưa
 
     def __init__(self, image, platforms, pos, *groups):
         """
-        :param image: block face avatar
-        :param platforms: obstacles such as coins, blocks, spikes, and orbs
-        :param pos: starting position
-        :param groups: takes any number of sprite groups.
+        image: ảnh của nhân vật
+        platforms: các vật cản có thể tương tác với player
+        pos: vị trí bắt đầu
+        groups: biến sprite groups
         """
         super().__init__(*groups)
-        self.onGround = False  # player on ground?
-        self.platforms = platforms  # obstacles but create a class variable for it
-        self.died = False  # player died?
-        self.win = False  # player beat level?
+        self.onGround = False  # kiểm tra player có ở trên mặt đất không
+        self.platforms = platforms  # một biến trong lớp gán bằng loại vật cản truyền vào
+        self.died = False
+        self.win = False
 
         self.image = pygame.transform.smoothscale(image, (32, 32))
-        self.rect = self.image.get_rect(center=pos)  # get rect gets a Rect object from the image
-        self.jump_amount = 10  # jump strength
-        self.particles = []  # player trail
-        self.isjump = False  # is the player jumping?
-        self.vel = Vector2(0, 0)  # velocity starts at zero
+        self.rect = self.image.get_rect(center=pos)
+        self.jump_amount = 10  # độ cao khi nhảy
+        self.particles = []  # trail di chuyển
+        self.isjump = False  # kiểm tra player có đang nhảy không
+        self.vel = Vector2(0, 0)  # vận tốc bắt đầu
 
     def draw_particle_trail(self, x, y, color=(255, 255, 255)):
-        """draws a trail of particle-rects in a line at random positions behind the player"""
+        # vẽ trail
 
         self.particles.append(
                 [[x - 5, y - 8], [random.randint(0, 25) / 10 - 1, random.choice([0, 0])],
@@ -104,20 +98,19 @@ class Player(pygame.sprite.Sprite):
 
         for p in platforms:
             if pygame.sprite.collide_rect(self, p):
-                """pygame sprite builtin collision method,
-                sees if player is colliding with any obstacles"""
+                """kiểm tra va chạm"""""
                 if isinstance(p, Orb) and (keys[pygame.K_UP] or keys[pygame.K_SPACE]):
                     pygame.draw.circle(alpha_surf, (255, 255, 0), p.rect.center, 18)
                     screen.blit(pygame.image.load("images/editor-0.9s-47px.gif"), p.rect.center)
-                    self.jump_amount = 12  # gives a little boost when hit orb
+                    self.jump_amount = 12 # boost 1 tí khi va chạm với Orb
                     self.jump()
-                    self.jump_amount = 10  # return jump_amount to normal
+                    self.jump_amount = 10  # đưa độ nhảy về chỉ số ban đầu
 
                 if isinstance(p, End):
                     self.win = True
 
                 if isinstance(p, Spike):
-                    self.died = True  # die on spike
+                    self.died = True  # thua vì spike
 
                 if isinstance(p, Coin):
                     # keeps track of all coins throughout the whole game(total of 6 is possible)
@@ -127,69 +120,64 @@ class Player(pygame.sprite.Sprite):
                     p.rect.x = 0
                     p.rect.y = 0
 
-                if isinstance(p, Platform):  # these are the blocks (may be confusing due to self.platforms)
+                if isinstance(p, Platform):  # vật cản ô khối
 
                     if yvel > 0:
-                        """if player is going down(yvel is +)"""
-                        self.rect.bottom = p.rect.top  # dont let the player go through the ground
-                        self.vel.y = 0  # rest y velocity because player is on ground
+                        """nếu player đang rơi xuống (v.y dương)"""
+                        self.rect.bottom = p.rect.top  # không cho player đi xuyên tường
+                        self.vel.y = 0  # v.y = 0 vì player ở trên nền
 
-                        # set self.onGround to true because player collided with the ground
                         self.onGround = True
 
-                        # reset jump
                         self.isjump = False
                     elif yvel < 0:
-                        """if yvel is (-),player collided while jumping"""
-                        self.rect.top = p.rect.bottom  # player top is set the bottom of block like it hits it head
+                        """nếu v.y đang âm, player va chạm khi đang nhảy"""
+                        self.rect.top = p.rect.bottom  # set player ở dưới đáy của khối va chạm
                     else:
-                        """otherwise, if player collides with a block, he/she dies."""
+                        """trong các trường hợp va chạm với khối còn lại thì bị tính là thua"""
                         self.vel.x = 0
-                        self.rect.right = p.rect.left  # dont let player go through walls
+                        self.rect.right = p.rect.left  # không để player đi xuyên tường
                         self.died = True
 
     def jump(self):
-        self.vel.y = -self.jump_amount  # players vertical velocity is negative so ^
+        self.vel.y = -self.jump_amount
 
     def update(self):
-        """update player"""
+
         if self.isjump:
             if self.onGround:
-                """if player wants to jump and player is on the ground: only then is jump allowed"""
+                """chỉ nhảy khi player đang ở trên mặt đất"""
                 self.jump()
 
-        if not self.onGround:  # only accelerate with gravity if in the air
-            self.vel += GRAVITY  # Gravity falls
+        if not self.onGround:  # nếu player không ở trên mặt đất thì phải bị kéo xuống bởi trọng lực
+            self.vel += GRAVITY  # trọng lực
 
-            # max falling speed
+            # vận tốc rơi tối đa
             if self.vel.y > 100: self.vel.y = 100
 
-        # do x-axis collisions
+        # va chạm theo trục x
         self.collide(0, self.platforms)
 
-        # increment in y direction
         self.rect.top += self.vel.y
 
-        # assuming player in the air, and if not it will be set to inversed after collide
         self.onGround = False
 
-        # do y-axis collisions
+        # va chạm theo trục y
         self.collide(self.vel.y, self.platforms)
 
-        # check if we won or if player won
+        # kiểm tra xem người chơi thắng hay thua
         eval_outcome(self.win, self.died)
 
 
 
 
 """
-Functions
+Hàm
 """
 
 
 def init_level(map):
-    """this is similar to 2d lists. it goes through a list of lists, and creates instances of certain obstacles
-    depending on the item in the list"""
+    """Xây dựng một map trong không gian 2D"""
     x = 0
     y = 0
 
@@ -219,57 +207,13 @@ def init_level(map):
         x = 0
 
 
-def blitRotate(surf, image, pos, originpos: tuple, angle: float):
-    """
-    rotate the player
-    :param surf: Surface
-    :param image: image to rotate
-    :param pos: position of image
-    :param originpos: x, y of the origin to rotate about
-    :param angle: angle to rotate
-    """
-    # calcaulate the axis aligned bounding box of the rotated image
-    w, h = image.get_size()
-    box = [Vector2(p) for p in [(0, 0), (w, 0), (w, -h), (0, -h)]]
-    box_rotate = [p.rotate(angle) for p in box]
-
-    # make sure the player does not overlap, uses a few lambda functions(new things that we did not learn about number1)
-    min_box = (min(box_rotate, key=lambda p: p[0])[0], min(box_rotate, key=lambda p: p[1])[1])
-    max_box = (max(box_rotate, key=lambda p: p[0])[0], max(box_rotate, key=lambda p: p[1])[1])
-    # calculate the translation of the pivot
-    pivot = Vector2(originpos[0], -originpos[1])
-    pivot_rotate = pivot.rotate(angle)
-    pivot_move = pivot_rotate - pivot
-
-    # calculate the upper left origin of the rotated image
-    origin = (pos[0] - originpos[0] + min_box[0] - pivot_move[0], pos[1] - originpos[1] - max_box[1] + pivot_move[1])
-
-    # get a rotated image
-    rotated_image = pygame.transform.rotozoom(image, angle, 1)
-
-    # rotate and blit the image
-    surf.blit(rotated_image, origin)
-
-
 def won_screen():
-    """show this screen when beating a level"""
+    """màn hình chiến thắng"""
     global attempts, level, fill
     attempts = 0
     player_sprite.clear(player.image, screen)
-    screen.fill(pygame.Color("yellow"))
-    txt_win1 = txt_win2 = "Nothing"
-    if level == 1:
-        if coins == 6:
-            txt_win1 = f"Coin{coins}/6! "
-            txt_win2 = "the game, Congratulations"
-    else:
-        txt_win1 = f"level{level}"
-        txt_win2 = f"Coins: {coins}/6. "
-    txt_win = f"{txt_win1} You beat {txt_win2}! Press SPACE to restart, or ESC to exit"
 
-    won_game = font.render(txt_win, True, BLUE)
-
-    screen.blit(won_game, (200, 300))
+    screen.blit(bg_won, (0, 0))
     level += 1
 
     wait_for_key()
@@ -277,22 +221,18 @@ def won_screen():
 
 
 def death_screen():
-    """show this screenon death"""
+    """màn hình thua cuộc"""
     global attempts, fill
     fill = 0
     player_sprite.clear(player.image, screen)
     attempts += 1
-    game_over = font.render("Game Over. [SPACE] to restart", True, WHITE)
-
-    screen.fill(pygame.Color("sienna1"))
-    screen.blits([[game_over, (100, 100)], [tip, (100, 400)]])
-
+    screen.blit(bg_game_over, (0, 0))
     wait_for_key()
     reset()
 
 
 def eval_outcome(won: bool, died: bool):
-    """simple function to run the win or die screen after checking won or died"""
+    """kiểm tra xem người chơi thắng hay thua"""
     if won:
         won_screen()
     if died:
@@ -300,10 +240,7 @@ def eval_outcome(won: bool, died: bool):
 
 
 def block_map(level_num):
-    """
-    :type level_num: rect(screen, BLACK, (0, 0, 32, 32))
-    open a csv file that contains the right level map
-    """
+    """mở file csv lưu map của game"""
     lvl = []
     with open(level_num, newline='') as csvfile:
         trash = csv.reader(csvfile, delimiter=',', quotechar='"')
@@ -313,32 +250,19 @@ def block_map(level_num):
 
 
 def start_screen():
-    """main menu. option to switch level, and controls guide, and game overview."""
+    """màn hình start"""
     global level
     if not start:
-        screen.fill(BLACK)
         if pygame.key.get_pressed()[pygame.K_1]:
             level = 0
         if pygame.key.get_pressed()[pygame.K_2]:
             level = 1
-
-        welcome = font.render(f"Welcome to Block. choose level({level + 1}) by keypad", True, WHITE)
-
-        controls = font.render("Controls: jump: Space/Up exit: Esc", True, GREEN)
-
-        screen.blits([[welcome, (100, 100)], [controls, (100, 400)], [tip, (100, 500)]])
-
-        level_memo = font.render(f"Level {level + 1}.", True, (255, 255, 0))
-        screen.blit(level_memo, (100, 200))
-
+        screen.blit(bg_start, (0, 0))
 
 def reset():
-    """resets the sprite groups, music, etc. for death and new level"""
+    """reset khi người chơi thua hoặc đến màn mới"""
     global player, elements, player_sprite, level
 
-    #if level == 1:
-        #pygame.mixer.music.load(os.path.join("music", "castle-town.mp3"))
-    #pygame.mixer_music.play()
     coin = 0
     player_sprite = pygame.sprite.Group()
     elements = pygame.sprite.Group()
@@ -349,16 +273,13 @@ def reset():
 
 
 def move_map():
-    """moves obstacles along the screen"""
+    """di chuyển vật cản"""
     for sprite in elements:
         sprite.rect.x -= CameraX
 
 
 def draw_stats(surf, money=0):
-    """
-    draws progress bar for level, number of attempts, displays coins collected, and progressively changes progress bar
-    colors
-    """
+    """thanh trạng thái"""
     global fill
     progress_colors = [pygame.Color("red"), pygame.Color("orange"), pygame.Color("yellow"), pygame.Color("lightgreen"),
                        pygame.Color("green")]
@@ -378,8 +299,7 @@ def draw_stats(surf, money=0):
 
 
 def wait_for_key():
-    """separate game loop for waiting for a key press while still running game loop
-    """
+    """thể hiện giao diện trong khi chờ người chơi bấm nút"""
     global level, start
     waiting = True
     while waiting:
@@ -401,7 +321,7 @@ def wait_for_key():
 
 
 def coin_count(coins):
-    """counts coins"""
+    """đếm coins"""
     if coins >= 3:
         coins = 3
     coins += 1
@@ -409,21 +329,13 @@ def coin_count(coins):
 
 
 def resize(img, size=(32, 32)):
-    """resize images
-    :param img: image to resize
-    :type img: im not sure, probably an object
-    :param size: default is 32 because that is the tile size
-    :type size: tuple
-    :return: resized img
-
-    :rtype:object?
-    """
+    """resize ảnh"""
     resized = pygame.transform.smoothscale(img, size)
     return resized
 
 
 """
-Global variables
+Các biến toàn cục
 """
 font = pygame.font.Font("FFFFORWA.ttf", 12)
 
@@ -446,7 +358,7 @@ block = pygame.image.load(os.path.join("images", "block_1.png"))
 block = pygame.transform.smoothscale(block, (32, 32))
 orb = pygame.image.load((os.path.join("images", "orb-yellow.png")))
 orb = pygame.transform.smoothscale(orb, (32, 32))
-trick = pygame.image.load((os.path.join("images", "obj-breakable.png")))
+trick = pygame.image.load((os.path.join("images", "block_1.png")))
 trick = pygame.transform.smoothscale(trick, (32, 32))
 
 #  ints
@@ -520,13 +432,7 @@ while not done:
     screen.blit(alpha_surf, (0, 0))  # Blit the alpha_surf onto the screen.
     draw_stats(screen, coin_count(coins))
 
-    if player.isjump:
-        """rotate the player by an angle and blit it if player is jumping"""
-        angle -= 8.1712  # this may be the angle needed to do a 360 deg turn in the length covered in one jump by player
-        blitRotate(screen, player.image, player.rect.center, (16, 16), angle)
-    else:
-        """if player.isjump is false, then just blit it normally(by using Group().draw() for sprites"""
-        player_sprite.draw(screen)  # draw player sprite group
+    player_sprite.draw(screen)
     elements.draw(screen)  # draw all other obstacles
 
     for event in pygame.event.get():
