@@ -1,12 +1,12 @@
 """
-Obstacle classes
+Vật cản
 """
 
 import pygame
 
-# Parent class
+# Lớp cha
 class Draw(pygame.sprite.Sprite):
-    """parent class to all obstacle classes; Sprite class"""
+    """lớp cha cho các lớp con vật cản"""
 
     def __init__(self, image, pos, *groups):
         super().__init__(*groups)
@@ -14,40 +14,30 @@ class Draw(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=pos)
 
 
-#  ====================================================================================================================#
-#  classes of all obstacles. this may seem repetitive but it is useful(to my knowledge)
-#  ====================================================================================================================#
-# children
+#Các lớp con
 class Platform(Draw):
-    """block"""
+    """ô gạch"""
 
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
 
 
 class Spike(Draw):
-    """spike"""
-
-    def __init__(self, image, pos, *groups):
-        super().__init__(image, pos, *groups)
-
-
-class Coin(Draw):
-    """coin. get 6 and you win the game"""
+    """gai nhọn"""
 
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
 
 
 class Orb(Draw):
-    """orb. click space or up arrow while on it to jump in midair"""
+    """quang cầu"""
 
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
 
 
 class Trick(Draw):
-    """block, but its a trick because you can go through it"""
+    """ô lừa"""
 
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
@@ -57,7 +47,7 @@ class Trick(Draw):
 
 
 class End(Draw):
-    "place this at the end of the level"
+    "kết thúc màn chơi"
 
     def __init__(self, image, pos, *groups):
         super().__init__(image, pos, *groups)
