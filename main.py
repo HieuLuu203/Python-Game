@@ -1,12 +1,3 @@
-"""CONTROLS
-Anywhere -> ESC: exit
-Main menu -> 1: go to previous level. 2: go to next level. SPACE: start game.
-Game -> SPACE/UP: jump, and activate orb
-    orb: jump in midair when activated
-If you die or beat the level, press SPACE to restart or go to the next level
-
-"""
-
 import csv
 import os
 import sys
@@ -184,8 +175,6 @@ def init_level(map):
             if col == "Spike":
                 Spike(spike, (x, y), elements)
             if col == "Orb":
-                orbs.append([x, y])
-
                 Orb(orb, (x, y), elements)
 
             if col == "T":
@@ -328,7 +317,7 @@ alpha_surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
 player_sprite = pygame.sprite.Group()
 elements = pygame.sprite.Group()
 
-# images
+# gán ảnh vào các biến
 spike = pygame.image.load(os.path.join("images", "obj-spike.png"))
 spike = resize(spike)
 block = pygame.image.load(os.path.join("images", "block_1.png"))
@@ -340,7 +329,7 @@ trick = pygame.transform.smoothscale(trick, (32, 32))
 trick_enter = pygame.image.load((os.path.join("images", "block_3.png")))
 trick_enter = pygame.transform.smoothscale(trick_enter, (32, 32))
 
-#  ints
+# khởi tạo 1 số biến
 fill = 0
 num = 0
 CameraX = 0
@@ -348,32 +337,23 @@ attempts = 0
 angle = 0
 level = 0
 
-# list
-particles = []
-orbs = []
-win_cubes = []
-
-# initialize level with
+# khởi tạo màn chơi
 levels = ["level_1.csv", "level_2.csv"]
 level_list = block_map(levels[level])
 level_width = (len(level_list[0]) * 32)
 level_height = len(level_list) * 32
 init_level(level_list)
 
-# set window title suitable for game
-pygame.display.set_caption('Block')
+# Title của game
+pygame.display.set_caption('Mint')
 
-# initialize the font variable to draw text later
+# khởi tạo font cho text để sử dụng
 text = font.render('image', False, (255, 255, 0))
 
-# music
-#music = pygame.mixer_music.load(os.path.join("music", "bossfight-Vextron.mp3"))
-#pygame.mixer_music.play()
-
-# bg image
+# background
 bg = pygame.image.load(os.path.join("images", "bg.jpg"))
 
-# create object of player class
+# Object của class Player
 player = Player(avatar, elements, (150, 150), player_sprite)
 
 while not done:
@@ -397,17 +377,18 @@ while not done:
     alpha_surf.fill((255, 255, 255, 1), special_flags=pygame.BLEND_RGBA_MULT)
 
     player_sprite.update()
-    CameraX = player.vel.x  # for moving obstacles
-    move_map()  # apply CameraX to all elements
+    # di chuyển vật cản
+    CameraX = player.vel.x
+    move_map()
 
-    screen.blit(bg, (0, 0))  # Clear the screen(with the bg)
+    screen.blit(bg, (0, 0))  # Clear màn hình
 
     player.draw_particle_trail(player.rect.left - 1, player.rect.bottom + 2,
                                WHITE)
-    screen.blit(alpha_surf, (0, 0))  # Blit the alpha_surf onto the screen.
+    screen.blit(alpha_surf, (0, 0))
 
     player_sprite.draw(screen)
-    elements.draw(screen)  # draw all other obstacles
+    elements.draw(screen)  # vẽ ra các vật cản
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
